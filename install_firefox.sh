@@ -29,12 +29,19 @@ install_firefox() {
 }
 
 # Mover icono del escritorio si está disponible
-DESKTOP_FILE="/dockerstartup/install/ubuntu/install/firefox/firefox.desktop"
-[ -f "$DESKTOP_FILE" ] && mv "$DESKTOP_FILE" "$HOME/Desktop/"
-
-set_desktop_icon() {
-  sed -i 's!Icon=.\+!Icon=/usr/share/icons/hicolor/48x48/apps/firefox.png!' "$HOME/Desktop/firefox.desktop"
-}
+# Desktop icon
+cat >/usr/share/applications/firefox.desktop <<EOL
+[Desktop Entry]
+Type=Application
+Name=Firefox
+Icon=Icon=/usr/share/icons/hicolor/48x48/apps/firefox.png
+Exec=firefox %u
+Comment=Filrefox navegador
+Categories=Development;Code;
+EOL
+chmod +x /usr/share/applications/firefox.desktop
+cp /usr/share/applications/firefox.desktop $HOME/Desktop/firefox.desktop
+chmod +x $HOME/Desktop/firefox.desktop
 
 # Crear archivo de preferencias
 prefs_file="/usr/lib/firefox/browser/defaults/preferences/firefox.js"
