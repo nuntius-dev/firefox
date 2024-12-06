@@ -17,7 +17,7 @@ install_firefox() {
     apt-get update
     apt-get install -y firefox --allow-downgrades
     apt-get install -y p11-kit-modules 
-    apt autoremove
+    apt autoremove -y
   else
     case "$DISTRO" in
       oracle*|rockylinux*|rhel*|almalinux*|fedora*)
