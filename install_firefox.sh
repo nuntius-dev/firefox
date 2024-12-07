@@ -1,54 +1,58 @@
 #!/usr/bin/env bash
 set -xe
-trap 'echo "Error en la línea $LINENO."' ERR
+trap 'echo "error en la línea $lineno."' err
 
-# Detectar distribución
-DISTRO=$(grep '^ID=' /etc/os-release | cut -d'=' -f2 | tr -d '"')
-if [[ "$DISTRO" =~ (ol|oracle|ubuntu) ]]; then
-  DISTRO="ubuntu"
+# detectar distribución
+distro=$(grep '^id=' /etc/os-release | cut -d'=' -f2 | tr -d '"')
+if [[ "$distro" =~ (ol|oracle|ubuntu) ]]; then
+  distro="ubuntu"
 fi
 
 install_firefox() {
-  if [[ "$DISTRO" == "ubuntu" ]]; then
-    if grep -q Jammy /etc/os-release || grep -q Noble /etc/os-release; then
+  if [[ "$distro" == "ubuntu" ]]; then
+    if grep -q jammy /etc/os-release || grep -q noble /etc/os-release; then
       add-apt-repository -y ppa:mozillateam/ppa
-      echo -e 'Package: *\nPin: release o=LP-PPA-mozillateam\nPin-Priority: 1001' > /etc/apt/preferences.d/mozilla-firefox
+      echo -e 'package: *\npin: release o=lp-ppa-mozillateam\npin-priority: 1001' > /etc/apt/preferences.d/mozilla-firefox
     fi
     apt-get update
     apt-get install -y firefox --allow-downgrades
     apt-get install -y p11-kit-modules 
     apt autoremove -y
   else
-    case "$DISTRO" in
+    case "$distro" in
       oracle*|rockylinux*|rhel*|almalinux*|fedora*)
         dnf install -y firefox p11-kit ;;
       opensuse)
-        zypper install -yn p11-kit-tools MozillaFirefox ;;
+        zypper install -yn p11-kit-tools mozillafirefox ;;
     esac
   fi
 }
 
-# Mover icono del escritorio si está disponible
-# Desktop icon
-cat >/usr/share/applications/firefox.desktop <<EOL
+set_desktop_icon() {
+  # mover icono del escritorio si está disponible
+  cat >/usr/share/applications/firefox.desktop <<eol
 [Desktop Entry]
 Type=Application
 Name=Firefox
-Icon=Icon=/usr/share/icons/hicolor/48x48/apps/firefox.png
+Icon=/usr/share/icons/hicolor/48x48/apps/firefox.png
 Exec=firefox %u
-Comment=Filrefox navegador
+Comment=Firefox navegador
 Categories=Development;Code;
-EOL
-chmod +x /usr/share/applications/firefox.desktop
-cp /usr/share/applications/firefox.desktop $HOME/Desktop/firefox.desktop
-chmod +x $HOME/Desktop/firefox.desktop
+eol
+  chmod +x /usr/share/applications/firefox.desktop
 
-# Crear archivo de preferencias
+  # Copiar el icono al escritorio del usuario
+  home="$HOME"  # Asegúrate de que se está utilizando la ruta esperada
+  cp /usr/share/applications/firefox.desktop "$home/Desktop/firefox.desktop"  # Corrige el uso de la variable de entorno para el escritorio
+  chmod +x "$home/Desktop/firefox.desktop"
+}
+
+# crear archivo de preferencias
 prefs_file="/usr/lib/firefox/browser/defaults/preferences/firefox.js"
 mkdir -p "$(dirname "$prefs_file")"
 touch "$prefs_file"
 
-# Ejecutar funciones principales
+# ejecutar funciones principales
 install_firefox
 set_desktop_icon
-echo "Firefox instalado correctamente en $DISTRO."
+echo "Firefox instalado correctamente en $distro."
