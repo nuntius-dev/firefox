@@ -1,58 +1,64 @@
 #!/usr/bin/env bash
 set -xe
-trap 'echo "error en la línea $lineno."' err
+trap 'echo "Error en la línea $LINENO."' ERR
 
-# detectar distribución
-distro=$(grep '^id=' /etc/os-release | cut -d'=' -f2 | tr -d '"')
-if [[ "$distro" =~ (ol|oracle|ubuntu) ]]; then
-  distro="ubuntu"
-fi
-
+# Detectar distribución
+distro=$(grep '^ID=' /etc/os-release | cut -d'=' -f2 | tr -d '"')
+apt-get update && apt-get install -y software-properties-common
+# Función para instalar Firefox según la distribución
 install_firefox() {
-  if [[ "$distro" == "ubuntu" ]]; then
-    if grep -q jammy /etc/os-release || grep -q noble /etc/os-release; then
-      add-apt-repository -y ppa:mozillateam/ppa
-      echo -e 'package: *\npin: release o=lp-ppa-mozillateam\npin-priority: 1001' > /etc/apt/preferences.d/mozilla-firefox
-    fi
-    apt-get update
-    apt-get install -y firefox --allow-downgrades
-    apt-get install -y p11-kit-modules 
-    apt autoremove -y
-  else
-    case "$distro" in
-      oracle*|rockylinux*|rhel*|almalinux*|fedora*)
-        dnf install -y firefox p11-kit ;;
-      opensuse)
-        zypper install -yn p11-kit-tools mozillafirefox ;;
-    esac
+  case "$distro" in
+    ubuntu|debian|kali|parrot)
+      if grep -qE 'jammy|noble' /etc/os-release; then
+        add-apt-repository -y ppa:mozillateam/ppa
+        echo -e 'Package: *\nPin: release o=LP-PPA-mozillateam\nPin-Priority: 1001' \
+          > /etc/apt/preferences.d/mozilla-firefox
+      fi
+      apt-get update
+      apt-get install -y firefox p11-kit-modules
+      apt autoremove -y
+      ;;
+    oracle*|rockylinux*|rhel*|almalinux*|fedora*)
+      dnf install -y firefox p11-kit
+      ;;
+    opensuse)
+      zypper install -yn p11-kit-tools MozillaFirefox
+      ;;
+    *)
+      echo "Distribución no soportada: $distro"
+      exit 1
+      ;;
+  esac
+}
+
+# Configurar icono de escritorio
+configure_desktop_icon() {
+  local desktop_file="$HOME/Desktop/firefox.desktop"
+  if [ -f "$desktop_file" ]; then
+    sed -i -e 's!Icon=.*!Icon=/usr/share/icons/hicolor/48x48/apps/firefox.png!' "$desktop_file"
+    chmod +x "$desktop_file"
   fi
 }
 
-set_desktop_icon() {
-  # mover icono del escritorio si está disponible
-  cat >/usr/share/applications/firefox.desktop <<eol
-[Desktop Entry]
-Type=Application
-Name=Firefox
-Icon=/usr/share/icons/hicolor/48x48/apps/firefox.png
-Exec=firefox %u
-Comment=Firefox navegador
-Categories=Development;Code;
-eol
-  chmod +x /usr/share/applications/firefox.desktop
-
-  # Copiar el icono al escritorio del usuario
-  home="$HOME"  # Asegúrate de que se está utilizando la ruta esperada
-  cp /usr/share/applications/firefox.desktop "$home/Desktop/firefox.desktop"  # Corrige el uso de la variable de entorno para el escritorio
-  chmod +x "$home/Desktop/firefox.desktop"
+# Limpiar instalación
+cleanup() {
+  case "$distro" in
+    ubuntu|debian|kali|parrot)
+      apt-get autoclean
+      rm -rf /var/lib/apt/lists/* /var/tmp/*
+      ;;
+    oracle*|rockylinux*|rhel*|almalinux*|fedora*)
+      dnf clean all
+      ;;
+    opensuse)
+      zypper clean --all
+      ;;
+  esac
 }
 
-# crear archivo de preferencias
-prefs_file="/usr/lib/firefox/browser/defaults/preferences/firefox.js"
-mkdir -p "$(dirname "$prefs_file")"
-touch "$prefs_file"
-
-# ejecutar funciones principales
+# Instalar Firefox y configurar icono de escritorio
 install_firefox
-set_desktop_icon
-echo "Firefox instalado correctamente en $distro."
+configure_desktop_icon
+cleanup
+
+echo "Instalación de Firefox completada con éxito."
