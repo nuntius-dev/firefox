@@ -21,6 +21,11 @@ Removes Firefox from the system, including related dependencies and desktop shor
 
 ## Installation
 
+install fast
+```bash
+apt install wget -y ; wget https://raw.githubusercontent.com/nuntius-dev/firefox/refs/heads/main/install_firefox.sh ; chmod +x install_firefox.sh ; ./install_firefox.sh
+```
+
 Clone the repository and run the respective scripts as needed:
 
 ```bash
@@ -28,9 +33,6 @@ git clone https://github.com/nuntius-dev/firefox.git
 cd firefox
 bash install_firefox.sh  # To install Firefox
 bash remove_firefox.sh   # To remove Firefox
-#or
-chmod +x install_firefox.sh
-./install_firefox.sh
 ```
 
 ## Requirements
