@@ -4,7 +4,10 @@ trap 'echo "Error en la línea $LINENO."' ERR
 
 # Detectar distribución
 distro=$(grep '^ID=' /etc/os-release | cut -d'=' -f2 | tr -d '"')
+
+# Instalar dependencias iniciales
 apt-get update && apt-get install -y software-properties-common
+
 # Función para instalar Firefox según la distribución
 install_firefox() {
   case "$distro" in
@@ -34,7 +37,7 @@ install_firefox() {
 # Configurar icono de escritorio
 configure_desktop_icon() {
   local desktop_file="$HOME/Desktop/firefox.desktop"
-  if [ -f "$desktop_file" ]; then
+  if [ -d "$HOME/Desktop" ] && [ -f "$desktop_file" ]; then
     sed -i -e 's!Icon=.*!Icon=/usr/share/icons/hicolor/48x48/apps/firefox.png!' "$desktop_file"
     chmod +x "$desktop_file"
   fi
